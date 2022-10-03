@@ -11,7 +11,7 @@ https://www.ip2location.com/web-service/ip2proxy
 
 ## Installation
 
-To use this module, download this repository to your local, and then copy the *mode.ts* file and the whole *src/* folder into your project root.
+To use this module, download the latest release of the module to your local, and then copy the *mode.ts* file and the whole *src/* folder into your project root.
 
 ## QUERY USING THE BIN FILE
 
