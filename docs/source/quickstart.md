@@ -28,7 +28,7 @@ import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.0.1/mod.ts";
 let ip2proxy = new IP2Proxy();
 
 if (ip2proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN") == 0) {
-	ip = '199.83.103.79';
+	const ip = '199.83.103.79';
 	
 	console.log("GetModuleVersion: " + ip2proxy.getModuleVersion());
 	console.log("GetPackageVersion: " + ip2proxy.getPackageVersion());
@@ -49,6 +49,7 @@ if (ip2proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGET
 	console.log("LastSeen: " + ip2proxy.getLastSeen(ip));
 	console.log("Threat: " + ip2proxy.getThreat(ip));
 	console.log("Provider: " + ip2proxy.getProvider(ip));
+	console.log("FraudScore: " + ip2proxy.getFraudScore(ip));
 	
 	// function for all fields
 	let all = ip2proxy.getAll(ip);
@@ -66,6 +67,7 @@ if (ip2proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGET
 	console.log("lastSeen: " + all.lastSeen);
 	console.log("threat: " + all.threat);
 	console.log("provider: " + all.provider);
+	console.log("fraudScore: " + all.fraudScore);
 }
 else {
 	console.log("Error reading BIN file.");

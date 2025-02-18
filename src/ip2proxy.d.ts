@@ -257,6 +257,13 @@ export class IP2Proxy {
      */
     getProvider(myIP: string): string;
     /**
+     * Returns the fraud score.
+     *
+     * @param myIP The IP address to query.
+     * @returns The fraud score.
+     */
+    getFraudScore(myIP: string): string;
+    /**
      * Returns all fields.
      *
      * @param myIP The IP address to query.
@@ -279,6 +286,7 @@ export class IP2Proxy {
         lastSeen: string;
         threat: string;
         provider: string;
+        fraudScore: string;
     };
     #private;
 }

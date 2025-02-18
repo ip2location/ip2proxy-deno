@@ -1,26 +1,25 @@
-import { createRequire } from "https://deno.land/std/node/module.ts";
-const require = createRequire(import.meta.url);
-
-var net = require("node:net");
-var fs = require("fs");
-var bigInt = require("big-integer");
-var https = require("https");
+import * as https from "node:https";
+import * as net from "node:net";
+import * as fs from "node:fs";
+import { Buffer } from "node:buffer";
+import bigInt from "npm:big-integer@1.6.52";
 
 // For BIN queries
-const VERSION = "3.0.1";
+const VERSION = "3.1.0";
 const MAX_INDEX = 65536;
-const COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
-const REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4];
-const CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5];
-const ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6];
-const PROXY_TYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
-const DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7];
-const USAGE_TYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8];
-const ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9];
-const AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10];
-const LAST_SEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11];
-const THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12];
-const PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13];
+const COUNTRY_POSITION = [0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const REGION_POSITION = [0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+const CITY_POSITION = [0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+const ISP_POSITION = [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6];
+const PROXY_TYPE_POSITION = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+const DOMAIN_POSITION = [0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7];
+const USAGE_TYPE_POSITION = [0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8];
+const ASN_POSITION = [0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9];
+const AS_POSITION = [0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10];
+const LAST_SEEN_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11];
+const THREAT_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12];
+const PROVIDER_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13];
+const FRAUD_SCORE_POSITION = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14];
 const MAX_IPV4_RANGE = bigInt(4294967295);
 const MAX_IPV6_RANGE = bigInt("340282366920938463463374607431768211455");
 const FROM_6TO4 = bigInt("42545680458834377588178886921629466624");
@@ -43,6 +42,7 @@ const MODES = {
   LAST_SEEN: 12,
   THREAT: 13,
   PROVIDER: 14,
+  FRAUD_SCORE: 15,
   ALL: 100,
 };
 const MSG_NOT_SUPPORTED = "NOT SUPPORTED";
@@ -84,6 +84,7 @@ export class IP2Proxy {
   #lastSeenPositionOffset = 0;
   #threatPositionOffset = 0;
   #providerPositionOffset = 0;
+  #fraudScorePositionOffset = 0;
 
   #countryEnabled = 0;
   #regionEnabled = 0;
@@ -97,6 +98,7 @@ export class IP2Proxy {
   #lastSeenEnabled = 0;
   #threatEnabled = 0;
   #providerEnabled = 0;
+  #fraudScoreEnabled = 0;
 
   #myDB = {
     dbType: 0,
@@ -122,14 +124,14 @@ export class IP2Proxy {
 
   // Read row data
   readRow(readBytes, position) {
-    let buffer = new Buffer.alloc(readBytes);
+    let buffer = Buffer.alloc(readBytes);
     let totalRead = fs.readSync(this.#fd, buffer, 0, readBytes, position - 1);
     return buffer;
   }
 
   // Read binary data
   readBin(readBytes, position, readType, isBigInt) {
-    let buffer = new Buffer.alloc(readBytes);
+    let buffer = Buffer.alloc(readBytes);
     let totalRead = fs.readSync(this.#fd, buffer, 0, readBytes, position);
 
     if (totalRead == readBytes) {
@@ -313,6 +315,10 @@ export class IP2Proxy {
           THREAT_POSITION[dbt] != 0 ? (THREAT_POSITION[dbt] - 2) << 2 : 0;
         this.#providerPositionOffset =
           PROVIDER_POSITION[dbt] != 0 ? (PROVIDER_POSITION[dbt] - 2) << 2 : 0;
+        this.#fraudScorePositionOffset =
+          FRAUD_SCORE_POSITION[dbt] != 0
+            ? (FRAUD_SCORE_POSITION[dbt] - 2) << 2
+            : 0;
 
         this.#countryEnabled = COUNTRY_POSITION[dbt] != 0 ? 1 : 0;
         this.#regionEnabled = REGION_POSITION[dbt] != 0 ? 1 : 0;
@@ -326,6 +332,7 @@ export class IP2Proxy {
         this.#lastSeenEnabled = LAST_SEEN_POSITION[dbt] != 0 ? 1 : 0;
         this.#threatEnabled = THREAT_POSITION[dbt] != 0 ? 1 : 0;
         this.#providerEnabled = PROVIDER_POSITION[dbt] != 0 ? 1 : 0;
+        this.#fraudScoreEnabled = FRAUD_SCORE_POSITION[dbt] != 0 ? 1 : 0;
 
         if (this.#myDB.indexed == 1) {
           len = MAX_INDEX;
@@ -602,6 +609,13 @@ export class IP2Proxy {
             );
           }
         }
+        if (this.#fraudScoreEnabled) {
+          if (mode == MODES.ALL || mode == MODES.FRAUD_SCORE) {
+            data.fraudScore = this.readStr(
+              this.read32Row(this.#fraudScorePositionOffset, row)
+            );
+          }
+        }
 
         if (data.countryShort == "-" || data.proxyType == "-") {
           data.isProxy = 0;
@@ -643,6 +657,7 @@ export class IP2Proxy {
       lastSeen: "?",
       threat: "?",
       provider: "?",
+      fraudScore: "?",
     };
 
     if (REGEX_IPV4_1_MATCH.test(myIP)) {
@@ -783,6 +798,12 @@ export class IP2Proxy {
   getProvider(myIP) {
     let data = this.proxyQuery(myIP, MODES.PROVIDER);
     return data.provider;
+  }
+
+  // Return a string for the fraud score
+  getFraudScore(myIP) {
+    let data = this.proxyQuery(myIP, MODES.FRAUD_SCORE);
+    return data.fraudScore;
   }
 
   // Return all results
