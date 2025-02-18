@@ -13,7 +13,7 @@ This library requires IP2Proxy BIN database to function. You may download the BI
 This module does not require any installation, you can import from Deno land like this:
 
 ```js
-import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.0.1/mod.ts";
+import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.1.0/mod.ts";
 ```
 
 ## Sample Codes
@@ -23,7 +23,7 @@ import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.0.1/mod.ts";
 You can query the geolocation information from the IP2Proxy BIN database as below:
 
 ```javascript
-import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.0.1/mod.ts";
+import { IP2Proxy } from "https://deno.land/x/ip2proxy@3.1.0/mod.ts";
 
 let ip2proxy = new IP2Proxy();
 
